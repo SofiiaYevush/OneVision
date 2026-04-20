@@ -1,0 +1,87 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: festivo-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: festivo
+      MONGO_INITDB_ROOT_PASSWORD: festivo
+      MONGO_INITDB_DATABASE: festivo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:1
+    container_name: festivo-mongo-express
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: festivo
+      ME_CONFIG_MONGODB_ADMINPASSWORD: festivo
+      ME_CONFIG_MONGODB_URL: mongodb://festivo:festivo@mongo:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8081:8081"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: festivo-mailpit
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: festivo-api
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGO_URI: mongodb://festivo:festivo@mongo:27017/festivo?authSource=admin
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:5173}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh}
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL: 7d
+      BCRYPT_ROUNDS: 12
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@festivo.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_FIRST_NAME: Festivo
+      ADMIN_LAST_NAME: Admin
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM: "Festivo <no-reply@festivo.local>"
+      UPLOAD_DIR: /app/uploads
+      UPLOAD_MAX_SIZE_MB: 5
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:4000}
+      LOG_LEVEL: info
+    ports:
+      - "4000:4000"
+    volumes:
+      - uploads-data:/app/uploads
+
+volumes:
+  mongo-data:
+  uploads-data:
