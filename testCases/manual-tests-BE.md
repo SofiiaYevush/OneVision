@@ -1457,3 +1457,231 @@ This document contains manual test cases for Admin functionality.
 
 **Priority:** Medium  
 **Type:** Functional
+
+---
+
+# REVIEW MODULE
+
+---
+
+## TC_101 - Create review (valid)
+
+**Preconditions:** Booking is completed, user is client
+
+**Steps:**
+1. POST /reviews
+2. Body:
+   {
+     "bookingId": "validId",
+     "rating": 5,
+     "comment": "Great service"
+   }
+
+**Expected Result:**
+- Status 201
+- Review created
+- Linked to booking
+
+**Priority:** High  
+**Type:** Functional
+
+---
+
+## TC_102 - Create review for non-existing booking
+
+**Steps:**
+1. Use invalid bookingId
+
+**Expected Result:**
+- Status 404
+- Booking not found
+
+**Priority:** High  
+**Type:** Negative
+
+---
+
+## TC_103 - Only client can create review
+
+**Steps:**
+1. Performer tries to create review
+
+**Expected Result:**
+- Status 403 Forbidden
+
+**Priority:** Critical  
+**Type:** Security
+
+---
+
+## TC_104 - Review only for completed booking
+
+**Steps:**
+1. Try to review pending/confirmed booking
+
+**Expected Result:**
+- Status 400
+- Error: only completed bookings allowed
+
+**Priority:** High  
+**Type:** Validation
+
+---
+
+## TC_105 - Duplicate review for same booking
+
+**Steps:**
+1. Submit review twice
+
+**Expected Result:**
+- Status 409 Conflict
+- Error: review already exists
+
+**Priority:** High  
+**Type:** Negative
+
+---
+
+## TC_106 - Rating validation (too low)
+
+**Steps:**
+1. rating = 0
+
+**Expected Result:**
+- Status 400 validation error
+
+**Priority:** Medium  
+**Type:** Validation
+
+---
+
+## TC_107 - Rating validation (too high)
+
+**Steps:**
+1. rating = 6
+
+**Expected Result:**
+- Status 400 validation error
+
+**Priority:** Medium  
+**Type:** Validation
+
+---
+
+## TC_108 - Comment validation (too short)
+
+**Steps:**
+1. comment < 5 characters
+
+**Expected Result:**
+- Status 400 validation error
+
+**Priority:** Medium  
+**Type:** Validation
+
+---
+
+## TC_109 - Comment validation (too long)
+
+**Steps:**
+1. comment > 2000 characters
+
+**Expected Result:**
+- Status 400 validation error
+
+**Priority:** Medium  
+**Type:** Validation
+
+---
+
+## TC_110 - Booking updated with reviewId
+
+**Steps:**
+1. Create review
+
+**Expected Result:**
+- Booking.reviewId is set
+
+**Priority:** High  
+**Type:** Integration
+
+---
+
+## TC_111 - Performer rating recalculated
+
+**Steps:**
+1. Create review
+
+**Expected Result:**
+- averageRating updated
+- reviewCount updated
+
+**Priority:** High  
+**Type:** Integration
+
+---
+
+## TC_112 - List performer reviews
+
+**Steps:**
+1. GET /reviews/performer/{profileId}
+
+**Expected Result:**
+- Status 200
+- Reviews returned
+
+**Priority:** High  
+**Type:** Functional
+
+---
+
+## TC_113 - Reviews sorted by date
+
+**Steps:**
+1. Fetch reviews
+
+**Expected Result:**
+- Sorted by createdAt DESC
+
+**Priority:** Medium  
+**Type:** Functional
+
+---
+
+## TC_114 - Pagination for reviews
+
+**Steps:**
+1. GET /reviews/performer/{profileId}?page=2&limit=5
+
+**Expected Result:**
+- 5 reviews returned
+- Correct meta
+
+**Priority:** Medium  
+**Type:** Functional
+
+---
+
+## TC_115 - Review contains client info
+
+**Steps:**
+1. Fetch reviews
+
+**Expected Result:**
+- clientId populated with name/avatar
+
+**Priority:** Medium  
+**Type:** Functional
+
+---
+
+## TC_116 - Unauthorized create review
+
+**Steps:**
+1. POST /reviews without token
+
+**Expected Result:**
+- Status 401 Unauthorized
+
+**Priority:** Critical  
+**Type:** Security
